@@ -10,7 +10,14 @@
   "author": "Dawood israr",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.20.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "mysql2": "^2.3.3"
+    "jsonwebtoken": "^9.0.0",
+    "msnodesqlv8": "^3.0.1",
+    "mssql": "^9.0.1",
+    "mysql2": "^2.3.3",
+    "sequelize": "^6.28.0"
   }
 }
