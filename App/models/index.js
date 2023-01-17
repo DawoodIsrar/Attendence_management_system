@@ -31,14 +31,16 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
   
-db.leaves =require("./employee.js")(sequelize, Sequelize,DataTypes,); 
-db.attendence =require("./appraisals")(sequelize, Sequelize,DataTypes);
+db.employee =require("./employee")(sequelize, Sequelize,DataTypes,); 
+db.appraisal =require("./appraisals")(sequelize, Sequelize,DataTypes);
 
-db.leaves.hasOne(db.attendence,{
-    through: "attend_leave",
-  foreignKey: "lid",
-  otherKey: "aid"
-})
 
+
+// new  db.appraisal({
+// });
+// new db.apraisal_comments({
+// });
+// new db.employee({
+// });
 
 module.exports = db;

@@ -1,10 +1,11 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const cors = require("cors");
-const userinfo = require("./App/routers/userInfo")
+const bcrypt = require("bcrypt");
+const jsonwebtoken = require("jsonwebtoken");
 const app = express();
-require('dotenv').config()
-pp.use(cors(corsOptions));
+require('dotenv').config();
+const secretKey = "cstAttendence";
+// app.use(cors(corsOptions));
 
 // parse requests of content-type - application/json
 app.use(bodyParser.json());
@@ -26,6 +27,7 @@ db.sequelize.sync({force:false}).then(() => {
 
   //userInfo all detail
 const { QueryTypes } = require('sequelize');
+
 const router =express.Router();
   router.get("/getUserInfo",async (req,res)=>{
     try {
@@ -78,7 +80,7 @@ const router =express.Router();
     }
   });
   //get attendence record by user id
-  router.get("/get/:id",async (req,res)=>{
+  router.get("/getAttendeceById/:id",async (req,res)=>{
     try {
       if(req.params.id!=null){
         let exist = await db.sequelize.query("USE zkteco;select USERINFO.NAME from USERINFO where USERINFO.USERID="+req.params.id,{
@@ -101,6 +103,173 @@ const router =express.Router();
      return res.status(500).json({message:error.message})
     }
   });
+  //adding appraisal by employye name and id
+  const appraisals = db.appraisal;
+  router.post("/addAppraisals",async (req,res)=>{
+    try {
+     if(req.body != null){
+     await  appraisals.create({
+        
+        employee_id:req.body.employee_id,
+        employee_name:req.body.employee_name,
+        understanding_job:req.body.understanding_job,
+        fulfillment_job:req.body.fulfillment_job,
+        capacity_work:req.body.capacity_work,
+        quality_work:req.body.quality_work,
+        learning_improvement:req.body.learning_improvement,
+        communication:req.body.communication,
+        responsibility:req.body.responsibility,
+        initiative:req.body.initiative,
+        motivation:req.body.motivation,
+        adoptability:req.body.adoptability,
+        reliability:req.body.reliability,
+        team_work:req.body.team_work,
+        punctuality:req.body.punctuality,
+        presentation:req.body.presentation,
+        politenesss_respect:req.body.politenesss_respect,
+        interaction:req.body.interaction,
+        interest_cst:req.body.interest_cst,
+        contact_coordination:req.body.contact_coordination,
+        understanding_job_comments:req.body.understanding_job_comments,
+        fulfillment_job_comments:req.body.fulfillment_job_comments,
+        capacity_work_comments:req.body.capacity_work_comments,
+        quality_work_comments:req.body.quality_work_comments,
+        learning_improvement_comments:req.body.learning_improvement_comments,
+        communication_comments:req.body.communication_comments,
+        responsibility_comments:req.body.responsibility_comments,
+        initiative_comments:req.body.initiative_comments,
+        motivation_comments:req.body.motivation_comments,
+        adoptability_comments:req.body.adoptability_comments,
+        reliability_comments:req.body.reliability_comments,
+        team_work_comments:req.body.team_work_comments,
+        punctuality_comments:req.body.punctuality_comments,
+        presentation_comments:req.body.presentation_comments,
+        politenesss_respect_comments:req.body.politenesss_respect_comments,
+        interaction_comments:req.body.interaction_comments,
+        interest_cst_comments:req.body.interest_cst_comments,
+        contact_coordination_comments:req.body.contact_coordination_comments,
+        general_remarks:req.body.general_remarks,
+        objective_next:req.body.objective_next,
+        proposal_staff:req.body.proposal_staff,
+        employee_remarks:req.body.employee_remarks,
+        evaluator_remarks:req.body.evaluator_remarks,
+        ceo_commensts:req.body.ceo_commensts
+      })
+      return res.status(200).json({message:"Appraisal is added successfully"});
+     }else{
+      return res.status(500).json({message:"some fields are missing"})
+     }
+  
+    } catch (error) {
+     return res.status(500).json({message:error.message})
+    }
+  });
+
+    //get appraisals record by user id
+    router.get("/getAppraisalById/:id",async (req,res)=>{
+      try {
+        if(req.params.id!=null){
+          let exist = await db.sequelize.query("USE zkteco;SELECT * from appraisals where employee_id="+req.params.id,{
+            type:QueryTypes.SELECT,
+          })
+  
+          if(exist!=null){
+         return res.status(200).json(exist);
+          }
+        }
+        else{
+          return res.status(500).json("The given Employee id have no appraisal exist")
+        }
+      
+      } catch (error) {
+       return res.status(500).json({message:error.message})
+      }
+    });
+  //add employees
+  const employees = db.employee;
+  router.post("/addEmployees",async (req,res)=>{
+    try {
+    if(req.body != null){
+     let exist = await employees.findOne({
+      where:{
+        name:req.body.name
+      }
+    })
+     if(exist==null){
+     await employees.create({
+        name:req.body.name,
+        email:req.body.email,
+        password:bcrypt.hashSync(req.body.password, 8)
+      })
+      return res.status(200).json("Employee added successfully");
+     }else{
+      return res.status(500).json("Sorry employee already exists");
+     }
+    }
+    } catch (error) {
+     return res.status(500).json({message:error.message})
+    }
+  });
+
+  //logIn Api
+  router.post("/login",async(req,res)=>{
+    await employees.findOne({
+      where: {
+        email: req.body.email
+      }
+    })
+      .then(employees => {
+        if (!employees) {
+          return res.status(404).send({ message: "User Not found." });
+        }
+  
+        var passwordIsValid = bcrypt.compareSync(
+          req.body.password,
+          employees.password
+        );
+  
+        if (!passwordIsValid) {
+          return res.status(401).send({
+            accessToken: null,
+            message: "Invalid Password!"
+          });
+        }
+  
+      var token = jsonwebtoken.sign({employees}, secretKey,{
+          expiresIn: 86400 // 24 hours
+        });
+          res.status(200).send({
+            id: employees.id,
+            username: employees.name,
+            email: employees.email,
+            accessToken: token
+          });
+       
+      })
+      
+  })
+//admin dashboard
+router.post("/dashboard",verifyToken,(req,res)=>{
+jsonwebtoken.verify(req.token,secretKey,(err,authData)=>{
+if(err){
+  return res.status(401).send("invalid token");
+}else{
+  res.status(200).json({message:"welcome to admin dashboard",authData});
+}
+})
+})
+//verify token function
+function verifyToken(req,res,next){
+    var bearerHeader = req.headers['authorization'];
+    if(typeof bearerHeader!== 'undefined'){
+      const bearer = bearerHeader.split(" ");
+      const token = bearer[1];
+      req.token = token;
+      next();
+    }else{
+     return  res.status(401).send("ivalid token")
+    }
+  }
   app.use(router);
   
   // simple route
