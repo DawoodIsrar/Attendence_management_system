@@ -37,22 +37,45 @@ const router =express.Router();
      let response = {
          'all user informations': data
      }
-    return res.status(200).json(response);
+    return res.status(200).json(data);
     } catch (error) {
      return res.status(500).json({message:error.message})
     }
   });
 
 //get user name exist for attendence
-  router.get("/getNames",async (req,res)=>{
+  router.get("/getNamesandId",async (req,res)=>{
     try {
-     let data =await db.sequelize.query('USE zkteco;select NAME from USERINFO;',{
+     let data =await db.sequelize.query('USE zkteco;select USERID,NAME from USERINFO;',{
          type:QueryTypes.SELECT,
      })
      let response = {
          'all user names': data
      }
     return res.status(200).json(response);
+    } catch (error) {
+     return res.status(500).json({message:error.message})
+    }
+  });
+  //get user info by id
+  router.post("/getProfiledetailById",async (req,res)=>{
+    try {
+      //check is name exist or not
+    //  let exist =  USERINFO.findOne({
+    //     where: {
+    //       NAME: req.body.NAME
+    //     }
+      
+    //   })
+   
+      let data =await db.sequelize.query('USE zkteco;select * from USERINFO where USERID='+req.body.id,{
+        type:QueryTypes.SELECT,
+    })
+    let response = {
+        'user profile detail': data
+    }
+   return res.status(200).json(response);
+   
     } catch (error) {
      return res.status(500).json({message:error.message})
     }
@@ -107,11 +130,13 @@ const router =express.Router();
   const appraisals = db.appraisal;
   router.post("/addAppraisals",async (req,res)=>{
     try {
-     if(req.body != null){
+      const exist = await employees.findOne({
+        where:{
+          name: req.body.name
+        }
+      })
+     if(req.body != null && exist!=null){
      await  appraisals.create({
-        
-        employee_id:req.body.employee_id,
-        employee_name:req.body.employee_name,
         understanding_job:req.body.understanding_job,
         fulfillment_job:req.body.fulfillment_job,
         capacity_work:req.body.capacity_work,
@@ -153,8 +178,8 @@ const router =express.Router();
         proposal_staff:req.body.proposal_staff,
         employee_remarks:req.body.employee_remarks,
         evaluator_remarks:req.body.evaluator_remarks,
-        ceo_commensts:req.body.ceo_commensts
-      })
+        ceo_commensts:req.body.ceo_commensts,
+        e_id: exist.id   })
       return res.status(200).json({message:"Appraisal is added successfully"});
      }else{
       return res.status(500).json({message:"some fields are missing"})
@@ -185,25 +210,49 @@ const router =express.Router();
        return res.status(500).json({message:error.message})
       }
     });
-  //add employees
+
+  //update employee detail
+  router.post("/updateEMployeeDetail",async (req,res)=>{
+    try {
+      let exist = await db.sequelize.query("USE zkteco;SELECT * from USERINFO where USERID="+req.body.id,{
+        type:QueryTypes.SELECT,
+      })
+    if(exist!= null){
+      await USERINFO.update({
+
+        GENDER:req.body.GENDER,
+      },
+      {
+        where: { USERID:exist.USERID,GENDER: null },
+      }
+      )
+      return res.status(200).json("Employee detail updated successfully");
+    }
+    
+    } catch (error) {
+     return res.status(500).json({message:error.message})
+    }
+  });
+  //add admin
   const employees = db.employee;
-  router.post("/addEmployees",async (req,res)=>{
+  const admins = db.admins;
+  router.post("/addAdmin",async (req,res)=>{
     try {
     if(req.body != null){
-     let exist = await employees.findOne({
+     let exist = await admins.findOne({
       where:{
         name:req.body.name
       }
     })
      if(exist==null){
-     await employees.create({
+     await admins.create({
         name:req.body.name,
         email:req.body.email,
         password:bcrypt.hashSync(req.body.password, 8)
       })
-      return res.status(200).json("Employee added successfully");
+      return res.status(200).json("Admin is added successfully");
      }else{
-      return res.status(500).json("Sorry employee already exists");
+      return res.status(500).json("Sorry Admin already exists");
      }
     }
     } catch (error) {
@@ -213,19 +262,19 @@ const router =express.Router();
 
   //logIn Api
   router.post("/login",async(req,res)=>{
-    await employees.findOne({
+    await admins.findOne({
       where: {
         email: req.body.email
       }
     })
-      .then(employees => {
-        if (!employees) {
+      .then(admins => {
+        if (!admins) {
           return res.status(404).send({ message: "User Not found." });
         }
   
         var passwordIsValid = bcrypt.compareSync(
           req.body.password,
-          employees.password
+          admins.password
         );
   
         if (!passwordIsValid) {
@@ -239,9 +288,9 @@ const router =express.Router();
           expiresIn: 86400 // 24 hours
         });
           res.status(200).send({
-            id: employees.id,
-            username: employees.name,
-            email: employees.email,
+            id: admins.id,
+            username: admins.name,
+            email: admins.email,
             accessToken: token
           });
        

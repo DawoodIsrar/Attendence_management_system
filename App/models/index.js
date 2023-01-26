@@ -16,31 +16,34 @@ const sequelize = new Sequelize(
 
     },
 
-    pool: {
-      max: config.pool.max,
-      min: config.pool.min,
-      acquire: config.pool.acquire,
-      idle: config.pool.idle,
+    // pool: {
+    //   max: config.pool.max,
+    //   min: config.pool.min,
+    //   acquire: config.pool.acquire,
+    //   idle: config.pool.idle,
       
-    }
+    // }
   }
 );
 
 const db = {};
-
+module.exports = sequelize;
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
   
-db.employee =require("./employee")(sequelize, Sequelize,DataTypes,); 
+db.employees =require("./employee")(sequelize, Sequelize,DataTypes,); 
 db.appraisal =require("./appraisals")(sequelize, Sequelize,DataTypes);
+db.salary =require("./salary")(sequelize, Sequelize,DataTypes,); 
+db.admins =require("./admins")(sequelize, Sequelize,DataTypes);
 
-
-
-// new  db.appraisal({
-// });
-// new db.apraisal_comments({
-// });
-// new db.employee({
-// });
+db.employees.hasOne(db.salary,{
+  foreignKey:"e_id"
+});
+db.employees.hasOne(db.appraisal,{
+  foreignKey:"e_id"
+});
+new db.admins({
+});
 
 module.exports = db;
+

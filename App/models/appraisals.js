@@ -1,14 +1,7 @@
+const {Sequelize, DataTypes, QueryTypes} = require("sequelize");
 module.exports = (sequelize, Sequelize,DataTypes) => {
     const appraisals = sequelize.define("appraisals", {
-      employee_id:{
-        type:DataTypes.STRING,
-        allowNull:false
-      },
-      employee_name:{
-        type:DataTypes.STRING,
-        allowNull:false
-      },
-
+     
       understanding_job:{
         type:DataTypes.STRING,
         allowNull:false
