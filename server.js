@@ -480,6 +480,36 @@ router.post("/addEmployees",async (req,res)=>{
    return res.status(500).json({message:error.message})
   }
 });
+//show employee detail by id
+router.get("/getProfiledetail/:id",async (req,res)=>{
+
+  
+  try {
+    
+    const exist = await employees.findOne({
+      where:{
+        id: req.params.id
+      }
+    })
+      if(exist!==null){
+      
+        //SELECT * from public."LoanAndAdvances" where "EmpName" = 'waqas'
+           const data =await db.sequelize.query('use zkteco;  select * from employees where id='+req.params.id,{
+               type:QueryTypes.SELECT,
+           })
+           // let response = {
+           //     'data': data
+           // }
+           return res.status(200).json(data);
+      }
+      else{
+        return res.status(200).send({'message':"sorry the id you have given is not register"});
+      }
+    } catch (error) {
+      return  res.status(500).send({'message':error.message})
+    }
+})
+
 //all salaries
 router.get("/getAllSalaries",async (req,res)=>{
   try {
@@ -556,6 +586,29 @@ router.get("/getAllSalaries",async (req,res)=>{
       })
       
   })
+//get tadays abcent count and present on time
+router.get("/getTodayAttendeeOnTime",async (req,res)=>{
+  try {
+   
+      let salaries = await db.sequelize.query(" use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '09:00:00' AND CAST(CHECKTIME AS TIME) < '09:30:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I';",{
+        type:QueryTypes.SELECT,
+      })
+     return res.status(200).json(salaries);
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+router.get("/getTodayAttendeeLate",async (req,res)=>{
+  try {
+   
+      let salaries = await db.sequelize.query("use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '09:30:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I'",{
+        type:QueryTypes.SELECT,
+      })
+     return res.status(200).json(salaries);
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
 //admin dashboard
 router.post("/dashboard",verifyToken,(req,res)=>{
 jsonwebtoken.verify(req.token,secretKey,(err,authData)=>{

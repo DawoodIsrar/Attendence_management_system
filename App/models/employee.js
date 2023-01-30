@@ -5,50 +5,50 @@ module.exports = (sequelize, Sequelize,DataTypes) => {
     
     name: {
         type: DataTypes.STRING,
-        allowNull:false
+        // allowNull:false
       },
       gender:{
         type:DataTypes.STRING,
-        allowNull:false
+        // allowNull:false
       },
       contact:{
         type:DataTypes.STRING,
-        allowNull:true,
+        // allowNull:true,
         minlength:11,
         maxlength:11},
 
       address:{
         type:DataTypes.STRING,
-        allowNull:false
+        // allowNull:false
       },
       email:{
         type:DataTypes.STRING,
-        allowNull:false
+        // allowNull:false
       },
       position:{
         type:DataTypes.STRING,
-        allowNull:false
+        // allowNull:false
       },
       birthday:{
         type:DataTypes.DATEONLY,
-        allowNull:false
+        // allowNull:false
       },
       verification:{
         type:DataTypes.STRING,
-        allowNull:false
+        // allowNull:false
       },  
        status:{
         type:DataTypes.STRING,
-        allowNull:false
+        // allowNull:false
       },
 
       join_date:{
         type:DataTypes.DATEONLY,
-        allowNull:false,
+        // allowNull:false,
       },
       desc:{
         type:DataTypes.STRING,
-        allowNull:false
+        // allowNull:false
       }
     },
    {
