@@ -15,6 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // database
 const db = require("./app/models");
+//database connection
 db.sequelize.sync({force:false}).then(() => {
     console.log('database connected');
    
@@ -25,9 +26,10 @@ db.sequelize.sync({force:false}).then(() => {
     console.log(`Server is running on port ${PORT}.`);
   });
 
-  //userInfo all detail
+ 
 const { QueryTypes } = require('sequelize');
 
+ //userInfo all detail
 const router =express.Router();
   router.get("/getUserInfo",async (req,res)=>{
     try {
@@ -44,7 +46,7 @@ const router =express.Router();
   });
 
 //get user name exist for attendence
-  router.get("/getNamesandId",async (req,res)=>{
+  router.get("/getName",async (req,res)=>{
     try {
      let data =await db.sequelize.query('USE zkteco;select USERID,NAME from USERINFO;',{
          type:QueryTypes.SELECT,
@@ -102,6 +104,7 @@ const router =express.Router();
      return res.status(500).json({message:error.message})
     }
   });
+
   //get attendence record by user id
   router.get("/getAttendeceById/:id",async (req,res)=>{
     try {
@@ -210,31 +213,287 @@ const router =express.Router();
        return res.status(500).json({message:error.message})
       }
     });
-
-  //update employee detail
-  router.post("/updateEMployeeDetail",async (req,res)=>{
+const salary = db.salary;
+  //Add salary
+  router.post("/addSalary",async (req,res)=>{
     try {
-      let exist = await db.sequelize.query("USE zkteco;SELECT * from USERINFO where USERID="+req.body.id,{
-        type:QueryTypes.SELECT,
-      })
-    if(exist!= null){
-      await USERINFO.update({
 
-        GENDER:req.body.GENDER,
-      },
-      {
-        where: { USERID:exist.USERID,GENDER: null },
+      let ex =  await employees.findOne({
+        where:{
+          name: req.body.name,
+        }
+      })
+    if(ex!= null){
+      await salary.create({
+        basic_salary:req.body.basic_salary,
+        bonus:0,
+        deduction:0,
+        overtime_rate:0,
+        overtime:0,
+        month:req.body.month,
+        e_id:ex.id
       }
       )
-      return res.status(200).json("Employee detail updated successfully");
+      return res.status(200).json("Employee salary added successfully");
+    }else{
+      return res.status(500).json("Employee not found")
     }
     
     } catch (error) {
      return res.status(500).json({message:error.message})
     }
   });
+
+//Add Addition to salary monthwise
+router.patch("/updateAddition",async (req,res)=>{
+  try {
+
+    let ex =  await employees.findOne({
+      where:{
+        name: req.body.name,
+      }
+    })
+   if(ex!=null){
+    let exs =  await salary.findOne({
+      where:{
+        e_id: ex.id,
+        month:req.body.month
+      }})
+      if(exs!= null){
+        await salary.update({
+          bonus:req.body.bonus,
+        },
+        {
+          where:{e_id:ex.id}
+        }
+        )
+        return res.status(200).json("Bonus is added to salary successfully");
+      }
+   }
+  
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//add overtime monthwise
+router.patch("/updateOvertimerate",async (req,res)=>{
+  try {
+    let ex =  await employees.findOne({
+      where:{
+        name: req.body.name,
+      }
+    })
+   if(ex!=null){
+    let exs =  await salary.findOne({
+      where:{
+        e_id: ex.id,
+        month:req.body.month
+      }})
+      if(exs!= null){
+        await salary.update({
+          overtime_rate:req.body.overtime_rate,
+        },
+        {
+          where:{e_id:ex.id}
+        }
+        )
+        return res.status(200).json("overtime rate is added to salary successfully");
+      }
+    }
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//add deduction month-wise
+router.patch("/updatededuction",async (req,res)=>{
+  try {
+
+    let ex =  await employees.findOne({
+      where:{
+        name: req.body.name,
+      }
+    })
+   if(ex!=null){
+    let exs =  await salary.findOne({
+      where:{
+        e_id: ex.id,
+        month:req.body.month
+      }})
+      if(exs!= null){
+        await salary.update({
+          deduction:req.body.deduction,
+        },
+        {
+          where:{e_id:ex.id}
+        }
+        )
+        return res.status(200).json("deduction is added to salary successfully");
+      }else{
+        res.status(500).json("Soory employee name or month of salary not found")
+      }
+    }else{
+      return res.status(500).json("Sorry employee  not found");
+    }
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+
+//see Overtime by employee name or date or both
+router.post("/showOvertime",async (req,res)=>{
+  try {
+
+    let ex =  await employees.findOne({
+      where:{
+        name: req.body.name,
+      }
+    })
+   if(ex!=null && req.body.date==null){
+    if(req.body.name!=null ){
+      let exist = await db.sequelize.query("use zkteco;select overtime_rate from salaries where e_id="+ex.id,{
+        type:QueryTypes.SELECT,
+      })
+      return res.status(200).json(exist);
+    } 
+    }
+    else if(req.body.name==null && req.body.date!=null){
+      let exist = await db.sequelize.query(`use zkteco;select overtime_rate from salaries where month=${req.body.date}`,{
+        type:QueryTypes.SELECT,
+      })
+      return res.status(200).json(exist);
+    }
+    else if(ex!=null && req.body.date!=null){
+      let exist = await db.sequelize.query(`use zkteco;select overtime_rate from salaries where month=${req.body.date} and e_id=${ex.id}`,{
+        type:QueryTypes.SELECT,
+      })
+      return res.status(200).json(exist);
+    }
+    else{
+      return res.status(500),json("sorry name or date is invalid")
+    }
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//see deduction by employee name or date or both
+router.post("/showDeduction",async (req,res)=>{
+  try {
+
+    let ex =  await employees.findOne({
+      where:{
+        name: req.body.name,
+      }
+    })
+   if(ex!=null && req.body.date==null){
+    if(req.body.name!=null ){
+      let exist = await db.sequelize.query("use zkteco;select deduction from salaries where e_id="+ex.id,{
+        type:QueryTypes.SELECT,
+      })
+      return res.status(200).json(exist);
+    } 
+    }
+    else if(req.body.name==null && req.body.date!=null){
+      let exist = await db.sequelize.query(`use zkteco;select deduction from salaries where month=${req.body.date}`,{
+        type:QueryTypes.SELECT,
+      })
+      return res.status(200).json(exist);
+    }
+    else if(ex!=null && req.body.date!=null){
+      let exist = await db.sequelize.query(`use zkteco;select deduction from salaries where month=${req.body.date} and e_id=${ex.id}`,{
+        type:QueryTypes.SELECT,
+      })
+      return res.status(200).json(exist);
+    }
+    else{
+      return res.status(500),json("sorry name or date is invalid")
+    }
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//see bonus by employee name or date or both
+router.post("/showBonus",async (req,res)=>{
+  try {
+
+    let ex =  await employees.findOne({
+      where:{
+        name: req.body.name,
+      }
+    })
+   if(ex!=null && req.body.date==null){
+    if(req.body.name!=null ){
+      let exist = await db.sequelize.query("use zkteco;select bonus from salaries where e_id="+ex.id,{
+        type:QueryTypes.SELECT,
+      })
+      return res.status(200).json(exist);
+    } 
+    }
+    else if(req.body.name==null && req.body.date!=null){
+      let exist = await db.sequelize.query(`use zkteco;select bonus from salaries where month=${req.body.date}`,{
+        type:QueryTypes.SELECT,
+      })
+      return res.status(200).json(exist);
+    }
+    else if(ex!=null && req.body.date!=null){
+      let exist = await db.sequelize.query(`use zkteco;select bonus from salaries where month=${req.body.date} and e_id=${ex.id}`,{
+        type:QueryTypes.SELECT,
+      })
+      return res.status(200).json(exist);
+    }
+    else{
+      return res.status(500),json("sorry name or date is invalid")
+    }
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//add employees
+router.post("/addEmployees",async (req,res)=>{
+  try {
+  
+   let exist = await employees.findOne({
+    where:{
+      name:req.body.name
+    }
+  })
+   if(exist==null){
+   await employees.create({
+    // EmpId:req.body.EmpId,
+    name: req.body.name,
+      gender:req.body.gender,
+      contact:req.body.contact,
+      address:req.body.address,
+      email:req.body.email,
+      position:req.body.position,
+      birthday:req.body.birthday,
+      verification:req.body.verification,  
+       status:req.body.status,
+      join_date:req.body.join_date,
+      desc:req.body.desc,
+    })
+    return res.status(200).json("employee is added successfully");
+   }else{
+    return res.status(500).json("Sorry employee already exists");
+   }
+  
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//all salaries
+router.get("/getAllSalaries",async (req,res)=>{
+  try {
+   
+      let salaries = await db.sequelize.query("use zkteco; select e.id,e.name,e.email,e.position,e.join_date,(salaries.basic_salary+salaries.bonus+(salaries.overtime*salaries.overtime_rate)-salaries.deduction) as total_salary FROM salaries inner join employees as e on salaries.e_id=e.id;",{
+        type:QueryTypes.SELECT,
+      })
+     return res.status(200).json(salaries);
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
   //add admin
-  const employees = db.employee;
+  const employees = db.employees;
   const admins = db.admins;
   router.post("/addAdmin",async (req,res)=>{
     try {

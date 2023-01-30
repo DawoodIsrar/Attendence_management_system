@@ -2,10 +2,7 @@ const express = require("express");
 const {Sequelize, DataTypes, QueryTypes} = require("sequelize");
 module.exports = (sequelize, Sequelize,DataTypes) => {
     const employees = sequelize.define("employees", {
-    EmpId:{
-      type: DataTypes.INTEGER,
-      allowNull:false
-    },
+    
     name: {
         type: DataTypes.STRING,
         allowNull:false
@@ -28,8 +25,12 @@ module.exports = (sequelize, Sequelize,DataTypes) => {
         type:DataTypes.STRING,
         allowNull:false
       },
-      birthday:{
+      position:{
         type:DataTypes.STRING,
+        allowNull:false
+      },
+      birthday:{
+        type:DataTypes.DATEONLY,
         allowNull:false
       },
       verification:{
@@ -40,6 +41,7 @@ module.exports = (sequelize, Sequelize,DataTypes) => {
         type:DataTypes.STRING,
         allowNull:false
       },
+
       join_date:{
         type:DataTypes.DATEONLY,
         allowNull:false,
@@ -47,7 +49,7 @@ module.exports = (sequelize, Sequelize,DataTypes) => {
       desc:{
         type:DataTypes.STRING,
         allowNull:false
-      },
+      }
     },
    {
     createdAt: false,

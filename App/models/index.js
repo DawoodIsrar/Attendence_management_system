@@ -36,14 +36,14 @@ db.appraisal =require("./appraisals")(sequelize, Sequelize,DataTypes);
 db.salary =require("./salary")(sequelize, Sequelize,DataTypes,); 
 db.admins =require("./admins")(sequelize, Sequelize,DataTypes);
 
-db.employees.hasOne(db.salary,{
-  foreignKey:"e_id"
-});
-db.employees.hasOne(db.appraisal,{
-  foreignKey:"e_id"
-});
-new db.admins({
-});
+// db.employees.hasOne(db.salary,{
+//   foreignKey:"e_id"
+// });
+// db.employees.hasOne(db.appraisal,{
+//   foreignKey:"e_id"
+// });
+// new db.admins({
+// });
 
 module.exports = db;
 

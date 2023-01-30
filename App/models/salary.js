@@ -8,16 +8,24 @@ module.exports = (sequelize, Sequelize,DataTypes) => {
       },
       overtime:{
         type:DataTypes.INTEGER,
-        allowNull:false
+        // allowNull:false
+      },
+      overtime_rate:{
+        type:DataTypes.INTEGER,
+        // allowNull:false
       },
       bonus:{
         type:DataTypes.INTEGER,
-        allowNull:false
+        // allowNull:false
       },
       deduction:{
         type:DataTypes.INTEGER,
-        allowNull:false
+        // allowNull:false
       },
+      month:{
+        type:DataTypes.DATEONLY,
+        allowNull:false
+      }
     },
    {
     createdAt: false,
