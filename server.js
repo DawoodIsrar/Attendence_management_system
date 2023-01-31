@@ -586,25 +586,63 @@ router.get("/getAllSalaries",async (req,res)=>{
       })
       
   })
-//get tadays abcent count and present on time
-router.get("/getTodayAttendeeOnTime",async (req,res)=>{
+ 
+  //get today attendence log
+  router.get("/getTodayAttendeelogs",async (req,res)=>{
+    try {
+     
+        let salaries = await db.sequelize.query("  use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '09:00:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I';",{
+          type:QueryTypes.SELECT,
+        })
+       return res.status(200).json(salaries);
+    } catch (error) {
+     return res.status(500).json({message:error.message})
+    }
+  });
+//get tadays present on time
+// router.get("/getTodayAttendeeOnTime",async (req,res)=>{
+//   try {
+   
+//       let salaries = await db.sequelize.query(" use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '09:00:00' AND CAST(CHECKTIME AS TIME) < '09:30:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I';",{
+//         type:QueryTypes.SELECT,
+//       })
+//      return res.status(200).json(salaries);
+//   } catch (error) {
+//    return res.status(500).json({message:error.message})
+//   }
+// });
+//get tadays count and present on time
+router.get("/getTodayAttendeeOnTimeCount",async (req,res)=>{
   try {
    
-      let salaries = await db.sequelize.query(" use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '09:00:00' AND CAST(CHECKTIME AS TIME) < '09:30:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I';",{
+     const exist = await db.sequelize.query(" use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '09:00:00' AND CAST(CHECKTIME AS TIME) < '09:30:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I';",{
         type:QueryTypes.SELECT,
       })
-     return res.status(200).json(salaries);
+     return res.status(200).json(exist.length);
   } catch (error) {
    return res.status(500).json({message:error.message})
   }
 });
-router.get("/getTodayAttendeeLate",async (req,res)=>{
+//get employye current month attendence log by id
+router.get("/getEmployyeAllLogs/:id",async (req,res)=>{
   try {
    
-      let salaries = await db.sequelize.query("use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '09:30:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I'",{
+     const exist = await db.sequelize.query(`use zkteco;SELECT u.name,c.USERID,CONVERT(VARCHAR(10), c.CHECKTIME, 103) AS Date,CONVERT(VARCHAR(5), c.CHECKTIME, 108) AS Time,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u  on c.USERID = u.USERID WHERE   CAST(CHECKTIME AS TIME) > '08:00:00'  AND CHECKTYPE = 'I' AND c.USERID=${req.params.id}  GROUP BY CONVERT(VARCHAR(10), c.CHECKTIME, 103), u.name, c.USERID, c.CHECKTIME, c.CHECKTYPE;`,{
         type:QueryTypes.SELECT,
       })
-     return res.status(200).json(salaries);
+     return res.status(200).json(exist.length);
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//get tadays late comers and present on time
+router.get("/getTodayLateAttendeeCount",async (req,res)=>{
+  try {
+   
+    const data = await db.sequelize.query("use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '09:30:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I'",{
+        type:QueryTypes.SELECT,
+      })
+     return res.status(200).json(data.length);
   } catch (error) {
    return res.status(500).json({message:error.message})
   }
