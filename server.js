@@ -140,6 +140,7 @@ const router =express.Router();
       })
      if(req.body != null && exist!=null){
      await  appraisals.create({
+        
         understanding_job:req.body.understanding_job,
         fulfillment_job:req.body.fulfillment_job,
         capacity_work:req.body.capacity_work,
@@ -456,10 +457,11 @@ router.post("/addEmployees",async (req,res)=>{
       name:req.body.name
     }
   })
-   if(exist==null){
+   if(exist==null && user!=null){
    await employees.create({
     // EmpId:req.body.EmpId,
-    name: req.body.name,
+      USERID:req.body.USERID,
+      name: req.body.name,
       gender:req.body.gender,
       contact:req.body.contact,
       address:req.body.address,
@@ -480,21 +482,21 @@ router.post("/addEmployees",async (req,res)=>{
    return res.status(500).json({message:error.message})
   }
 });
-//show employee detail by id
-router.get("/getProfiledetail/:id",async (req,res)=>{
+//show employee detail by name
+router.get("/getProfiledetail/:name",async (req,res)=>{
 
   
   try {
     
     const exist = await employees.findOne({
       where:{
-        id: req.params.id
+        name: req.params.name
       }
     })
       if(exist!==null){
       
         //SELECT * from public."LoanAndAdvances" where "EmpName" = 'waqas'
-           const data =await db.sequelize.query('use zkteco;  select * from employees where id='+req.params.id,{
+           const data =await db.sequelize.query('use zkteco;  select * from employees where name='+req.params.name,{
                type:QueryTypes.SELECT,
            })
            // let response = {
@@ -591,7 +593,7 @@ router.get("/getAllSalaries",async (req,res)=>{
   router.get("/getTodayAttendeelogs",async (req,res)=>{
     try {
      
-        let salaries = await db.sequelize.query("  use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '09:00:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I';",{
+        let salaries = await db.sequelize.query("  use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c INNER JOIN USERINFO as u ON c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '08:00:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I' ORDER BY CHECKTIME ASC;",{
           type:QueryTypes.SELECT,
         })
        return res.status(200).json(salaries);
@@ -615,7 +617,7 @@ router.get("/getAllSalaries",async (req,res)=>{
 router.get("/getTodayAttendeeOnTimeCount",async (req,res)=>{
   try {
    
-     const exist = await db.sequelize.query(" use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '09:00:00' AND CAST(CHECKTIME AS TIME) < '09:30:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I';",{
+     const exist = await db.sequelize.query(" use zkteco; SELECT u.name,c.USERID,c.CHECKTIME,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u on c.USERID = u.USERID WHERE CAST(CHECKTIME AS TIME) > '08:00:00' AND CAST(CHECKTIME AS TIME) < '09:30:00' AND CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE) AND CHECKTYPE = 'I';",{
         type:QueryTypes.SELECT,
       })
      return res.status(200).json(exist.length);
@@ -627,10 +629,28 @@ router.get("/getTodayAttendeeOnTimeCount",async (req,res)=>{
 router.get("/getEmployyeAllLogs/:id",async (req,res)=>{
   try {
    
-     const exist = await db.sequelize.query(`use zkteco;SELECT u.name,c.USERID,CONVERT(VARCHAR(10), c.CHECKTIME, 103) AS Date,CONVERT(VARCHAR(5), c.CHECKTIME, 108) AS Time,c.CHECKTYPE FROM CHECKINOUT as c inner join USERINFO as u  on c.USERID = u.USERID WHERE   CAST(CHECKTIME AS TIME) > '08:00:00'  AND CHECKTYPE = 'I' AND c.USERID=${req.params.id}  GROUP BY CONVERT(VARCHAR(10), c.CHECKTIME, 103), u.name, c.USERID, c.CHECKTIME, c.CHECKTYPE;`,{
+     const exist = await db.sequelize.query(`USE zkteco;
+     WITH checkinout_grouped AS (
+     SELECT USERID, CAST(CHECKTIME AS DATE) AS CheckDate, MIN(CASE WHEN CHECKTYPE = 'I' THEN CHECKTIME END) AS Checkin, MAX(CASE WHEN CHECKTYPE = 'O' THEN CHECKTIME END) AS Exit_time
+     FROM CHECKINOUT
+     WHERE CHECKTYPE = 'I' OR CHECKTYPE = 'O'
+     GROUP BY USERID, CAST(CHECKTIME AS DATE)
+     )
+     SELECT
+     cin.USERID as [Employee ID],
+     ui.NAME as [Employee Name],
+     'Exit' AS CheckType,
+     FORMAT(cin.CheckDate, 'dd/MM/yy') AS Date,
+     FORMAT(cin.Checkin, 'hh:mm') AS [Entry Time],
+     FORMAT(cin.Exit_time, 'hh:mm') AS [Exit Time]
+     FROM checkinout_grouped cin
+     INNER JOIN USERINFO ui ON cin.USERID = ui.USERID
+     WHERE cin.USERID=${req.params.id}
+     ORDER BY cin.CheckDate DESC, cin.Checkin DESC, cin.Exit_time DESC
+     OFFSET 1 ROWS;`,{
         type:QueryTypes.SELECT,
       })
-     return res.status(200).json(exist.length);
+     return res.status(200).json(exist);
   } catch (error) {
    return res.status(500).json({message:error.message})
   }

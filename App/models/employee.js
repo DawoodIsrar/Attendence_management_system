@@ -2,11 +2,14 @@ const express = require("express");
 const {Sequelize, DataTypes, QueryTypes} = require("sequelize");
 module.exports = (sequelize, Sequelize,DataTypes) => {
     const employees = sequelize.define("employees", {
-    
-    name: {
-        type: DataTypes.STRING,
-        // allowNull:false
-      },
+    USERID:{
+      type: DataTypes.INTEGER,
+      allowNull:false
+         },
+   name:{
+    type:DataTypes.STRING,
+    allowNull:flase
+   }  ,                                    
       gender:{
         type:DataTypes.STRING,
         // allowNull:false
