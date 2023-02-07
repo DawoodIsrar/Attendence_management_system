@@ -37,10 +37,12 @@ db.salary =require("./salary")(sequelize, Sequelize,DataTypes,);
 db.admins =require("./admins")(sequelize, Sequelize,DataTypes);
 
 // db.employees.hasOne(db.salary,{
-//   foreignKey:"USERID"
 // });
 // db.employees.hasOne(db.appraisal,{
-//   foreignKey:"USERID"
+// });
+// new db.appraisal({
+// });
+// new db.salary({
 // });
 // new db.admins({
 // });

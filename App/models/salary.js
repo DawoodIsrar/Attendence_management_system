@@ -25,6 +25,10 @@ module.exports = (sequelize, Sequelize,DataTypes) => {
       month:{
         type:DataTypes.DATEONLY,
         allowNull:false
+      },
+      USERID: {
+        type: DataTypes.INTEGER,
+        allowNull: false
       }
     },
    {

@@ -135,7 +135,8 @@ const router =express.Router();
     try {
       const exist = await employees.findOne({
         where:{
-          name: req.body.name
+          USERID: req.body.USERID,
+          name:req.body.name
         }
       })
      if(req.body != null && exist!=null){
@@ -183,7 +184,8 @@ const router =express.Router();
         employee_remarks:req.body.employee_remarks,
         evaluator_remarks:req.body.evaluator_remarks,
         ceo_commensts:req.body.ceo_commensts,
-        e_id: exist.id   })
+        USERID: exist.USERID  
+       })
       return res.status(200).json({message:"Appraisal is added successfully"});
      }else{
       return res.status(500).json({message:"some fields are missing"})
@@ -194,11 +196,11 @@ const router =express.Router();
     }
   });
 
-    //get appraisals record by user id
+    //get appraisals record by user USERID
     router.get("/getAppraisalById/:id",async (req,res)=>{
       try {
         if(req.params.id!=null){
-          let exist = await db.sequelize.query("USE zkteco;SELECT * from appraisals where employee_id="+req.params.id,{
+          let exist = await db.sequelize.query("USE zkteco;SELECT * from appraisals where USERID="+req.params.id,{
             type:QueryTypes.SELECT,
           })
   
@@ -219,11 +221,13 @@ const salary = db.salary;
   router.post("/addSalary",async (req,res)=>{
     try {
 
-      let ex =  await employees.findOne({
+      const ex =  await employees.findOne({
         where:{
+          USERID:req.body.USERID,
           name: req.body.name,
         }
       })
+      console.log(ex.USERID);
     if(ex!= null){
       await salary.create({
         basic_salary:req.body.basic_salary,
@@ -231,8 +235,9 @@ const salary = db.salary;
         deduction:0,
         overtime_rate:0,
         overtime:0,
+        USERID:ex.USERID,
         month:req.body.month,
-        e_id:ex.id
+       
       }
       )
       return res.status(200).json("Employee salary added successfully");
@@ -251,25 +256,31 @@ router.patch("/updateAddition",async (req,res)=>{
 
     let ex =  await employees.findOne({
       where:{
-        name: req.body.name,
+        USERID:req.body.USERID,
+        name:req.body.name
       }
     })
    if(ex!=null){
-    let exs =  await salary.findOne({
+     const exs = salary.findOne({
       where:{
-        e_id: ex.id,
+        USERID:req.body.USERID,
         month:req.body.month
-      }})
+      }
+     })
       if(exs!= null){
         await salary.update({
           bonus:req.body.bonus,
         },
         {
-          where:{e_id:ex.id}
+          where:{USERID:ex.USERID,month:req.body.month}
         }
         )
         return res.status(200).json("Bonus is added to salary successfully");
+      }else{
+        return res.status(200).json("sorry employee salary of the require month is not availible")
       }
+   }else{
+    res.status(200).json("sorry the employee not found")
    }
   
   } catch (error) {
@@ -281,26 +292,32 @@ router.patch("/updateOvertimerate",async (req,res)=>{
   try {
     let ex =  await employees.findOne({
       where:{
-        name: req.body.name,
+        USERID:req.body.USERID,
+       name:req.body.name
       }
     })
    if(ex!=null){
     let exs =  await salary.findOne({
       where:{
-        e_id: ex.id,
-        month:req.body.month
-      }})
-      if(exs!= null){
-        await salary.update({
-          overtime_rate:req.body.overtime_rate,
-        },
-        {
-          where:{e_id:ex.id}
-        }
-        )
-        return res.status(200).json("overtime rate is added to salary successfully");
+        USERID:req.body.USERID,
+       month:req.body.month
       }
+    })
+    if(exs!=null){
+      await salary.update({
+        overtime_rate:req.body.overtime_rate,
+      },
+      {
+        where:{USERID:ex.USERID,month:req.body.month}
+      }
+      )
+      return res.status(200).json("overtime rate is added to salary successfully");
+    }else{
+      return res.status(200).json("sorry employee salary of the require month is not availible")
     }
+ }else{
+  res.status(200).json("sorry the employee not found")
+ }
   } catch (error) {
    return res.status(500).json({message:error.message})
   }
@@ -308,33 +325,34 @@ router.patch("/updateOvertimerate",async (req,res)=>{
 //add deduction month-wise
 router.patch("/updatededuction",async (req,res)=>{
   try {
-
     let ex =  await employees.findOne({
       where:{
-        name: req.body.name,
+        USERID:req.body.USERID,
+       name:req.body.name
       }
     })
    if(ex!=null){
     let exs =  await salary.findOne({
       where:{
-        e_id: ex.id,
-        month:req.body.month
-      }})
-      if(exs!= null){
-        await salary.update({
-          deduction:req.body.deduction,
-        },
-        {
-          where:{e_id:ex.id}
-        }
-        )
-        return res.status(200).json("deduction is added to salary successfully");
-      }else{
-        res.status(500).json("Soory employee name or month of salary not found")
+        USERID:req.body.USERID,
+       month:req.body.month
       }
+    })
+    if(exs!=null){
+      await salary.update({
+        deduction:req.body.deduction,
+      },
+      {
+        where:{USERID:ex.USERID,month:req.body.month}
+      }
+      )
+      return res.status(200).json("deduction is added to salary successfully");
     }else{
-      return res.status(500).json("Sorry employee  not found");
+      return res.status(200).json("sorry employee salary of the require month is not availible")
     }
+ }else{
+  res.status(200).json("sorry the employee not found")
+ }
   } catch (error) {
    return res.status(500).json({message:error.message})
   }
@@ -346,25 +364,32 @@ router.post("/showOvertime",async (req,res)=>{
 
     let ex =  await employees.findOne({
       where:{
-        name: req.body.name,
+        USERID:req.body.USERID,
+          name: req.body.name,
       }
     })
-   if(ex!=null && req.body.date==null){
+    let exs =  await salary.findOne({
+      where:{
+        USERID:req.body.USERID,
+          
+      }
+    })
+   if(ex!=null && req.body.date==null && exs!=null){
     if(req.body.name!=null ){
-      let exist = await db.sequelize.query("use zkteco;select overtime_rate from salaries where e_id="+ex.id,{
+      let exist = await db.sequelize.query("use zkteco;select overtime_rate from salaries where USERID="+ex.USERID,{
         type:QueryTypes.SELECT,
       })
       return res.status(200).json(exist);
     } 
     }
-    else if(req.body.name==null && req.body.date!=null){
+    else if(req.body.name==null && req.body.date!=null && exs!=null){
       let exist = await db.sequelize.query(`use zkteco;select overtime_rate from salaries where month=${req.body.date}`,{
         type:QueryTypes.SELECT,
       })
       return res.status(200).json(exist);
     }
-    else if(ex!=null && req.body.date!=null){
-      let exist = await db.sequelize.query(`use zkteco;select overtime_rate from salaries where month=${req.body.date} and e_id=${ex.id}`,{
+    else if(ex!=null && req.body.date!=null && exs!=null){
+      let exist = await db.sequelize.query(`use zkteco;select overtime_rate from salaries where month=${req.body.date} and USERID=${ex.USERID}`,{
         type:QueryTypes.SELECT,
       })
       return res.status(200).json(exist);
@@ -382,25 +407,32 @@ router.post("/showDeduction",async (req,res)=>{
 
     let ex =  await employees.findOne({
       where:{
+        USERID:req.body.USERID,
         name: req.body.name,
       }
     })
-   if(ex!=null && req.body.date==null){
+    let exs =  await salary.findOne({
+      where:{
+        USERID:req.body.USERID,
+          
+      }
+    })
+   if(ex!=null && req.body.date==null && exs!=null){
     if(req.body.name!=null ){
-      let exist = await db.sequelize.query("use zkteco;select deduction from salaries where e_id="+ex.id,{
+      let exist = await db.sequelize.query("use zkteco;select deduction from salaries where USERID="+ex.USERID,{
         type:QueryTypes.SELECT,
       })
       return res.status(200).json(exist);
     } 
     }
-    else if(req.body.name==null && req.body.date!=null){
+    else if(req.body.name==null && req.body.date!=null && exs!=null){
       let exist = await db.sequelize.query(`use zkteco;select deduction from salaries where month=${req.body.date}`,{
         type:QueryTypes.SELECT,
       })
       return res.status(200).json(exist);
     }
-    else if(ex!=null && req.body.date!=null){
-      let exist = await db.sequelize.query(`use zkteco;select deduction from salaries where month=${req.body.date} and e_id=${ex.id}`,{
+    else if(ex!=null && req.body.date!=null && exs!=null){
+      let exist = await db.sequelize.query(`use zkteco;select deduction from salaries where month=${req.body.date} and USERID=${ex.USERID}`,{
         type:QueryTypes.SELECT,
       })
       return res.status(200).json(exist);
@@ -418,25 +450,31 @@ router.post("/showBonus",async (req,res)=>{
 
     let ex =  await employees.findOne({
       where:{
-        name: req.body.name,
+        USERID:req.body.USERID,
+          name: req.body.name,
       }
     })
-   if(ex!=null && req.body.date==null){
+    let exs =  await salary.findOne({
+      where:{
+        USERID:req.body.USERID
+      }
+    })
+   if(ex!=null && req.body.date==null && exs!=null ){
     if(req.body.name!=null ){
-      let exist = await db.sequelize.query("use zkteco;select bonus from salaries where e_id="+ex.id,{
+      let exist = await db.sequelize.query("use zkteco;select bonus from salaries where USERID="+ex.USERID,{
         type:QueryTypes.SELECT,
       })
       return res.status(200).json(exist);
     } 
     }
-    else if(req.body.name==null && req.body.date!=null){
+    else if(req.body.name==null && req.body.date!=null && exs!=null){
       let exist = await db.sequelize.query(`use zkteco;select bonus from salaries where month=${req.body.date}`,{
         type:QueryTypes.SELECT,
       })
       return res.status(200).json(exist);
     }
-    else if(ex!=null && req.body.date!=null){
-      let exist = await db.sequelize.query(`use zkteco;select bonus from salaries where month=${req.body.date} and e_id=${ex.id}`,{
+    else if(ex!=null && req.body.date!=null && exs!=null){
+      let exist = await db.sequelize.query(`use zkteco;select bonus from salaries where month=${req.body.date} and USERID=${ex.USERID}`,{
         type:QueryTypes.SELECT,
       })
       return res.status(200).json(exist);
@@ -454,10 +492,11 @@ router.post("/addEmployees",async (req,res)=>{
   
    let exist = await employees.findOne({
     where:{
-      name:req.body.name
+      name:req.body.name,
+      USERID:req.body.USERID
     }
   })
-   if(exist==null && user!=null){
+   if(exist==null){
    await employees.create({
     // EmpId:req.body.EmpId,
       USERID:req.body.USERID,
@@ -469,13 +508,13 @@ router.post("/addEmployees",async (req,res)=>{
       position:req.body.position,
       birthday:req.body.birthday,
       verification:req.body.verification,  
-       status:req.body.status,
+      status:req.body.status,
       join_date:req.body.join_date,
       desc:req.body.desc,
     })
     return res.status(200).json("employee is added successfully");
    }else{
-    return res.status(500).json("Sorry employee already exists");
+    return res.status(500).json("Sorry employee having this USERID already exists");
    }
   
   } catch (error) {
@@ -483,20 +522,20 @@ router.post("/addEmployees",async (req,res)=>{
   }
 });
 //show employee detail by name
-router.get("/getProfiledetail/:name",async (req,res)=>{
+router.get("/getProfiledetail/:id",async (req,res)=>{
 
   
   try {
     
     const exist = await employees.findOne({
       where:{
-        name: req.params.name
+        USERID: req.params.USERID
       }
     })
       if(exist!==null){
       
         //SELECT * from public."LoanAndAdvances" where "EmpName" = 'waqas'
-           const data =await db.sequelize.query('use zkteco;  select * from employees where name='+req.params.name,{
+           const data =await db.sequelize.query('use zkteco;  select * from employees where USERID='+req.params.id,{
                type:QueryTypes.SELECT,
            })
            // let response = {
