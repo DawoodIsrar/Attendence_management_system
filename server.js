@@ -249,7 +249,43 @@ const salary = db.salary;
      return res.status(500).json({message:error.message})
     }
   });
+//update salary
+ router.post("/updateSalary",async (req,res)=>{
+  try {
 
+    const ex =  await employees.findOne({
+      where:{
+        USERID:req.body.USERID,
+        name: req.body.name,
+      }
+    })
+    console.log(ex.USERID);
+  if(ex!= null){
+    await salary.findOne({
+      where:{
+      USERID:ex.USERID,
+      month:req.body.month,
+      }
+    }).then(
+   
+        await salary.update({
+          basic_salary:req.body.basic_salary,
+        },
+        {
+          where:{USERID:ex.USERID,month:req.body.month}
+        }
+        )
+      
+    )
+    return res.status(200).json("Employee salary updated successfully");
+  }else{
+    return res.status(500).json("Employee not found")
+  }
+  
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
 //Add Addition to salary monthwise
 router.patch("/updateAddition",async (req,res)=>{
   try {
@@ -660,6 +696,18 @@ router.get("/getTodayAttendeeOnTimeCount",async (req,res)=>{
         type:QueryTypes.SELECT,
       })
      return res.status(200).json(exist.length);
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//get count of today absent and present 
+router.get("/getTodayAPresentAndAbsent",async (req,res)=>{
+  try {
+   
+     const exist = await db.sequelize.query(" use zkteco;  WITH present_users AS (  SELECT USERID  FROM CHECKINOUT  WHERE CAST(CHECKTIME AS DATE) = CAST(GETDATE() AS DATE  SELECT COUNT(DISTINCT USERID) - (SELECT COUNT(*) FROM present_users) AS absent_user,        (SELECT COUNT(*) FROM present_users) AS present_user FROM USERINFO; ",{
+        type:QueryTypes.SELECT,
+      })
+     return res.status(200).json(exist);
   } catch (error) {
    return res.status(500).json({message:error.message})
   }
