@@ -218,6 +218,7 @@ const router =express.Router();
     });
 const salary = db.salary;
   //Add salary
+   
   router.post("/addSalary",async (req,res)=>{
     try {
 
@@ -227,7 +228,6 @@ const salary = db.salary;
           name: req.body.name,
         }
       })
-      console.log(ex.USERID);
     if(ex!= null){
       await salary.create({
         basic_salary:req.body.basic_salary,
@@ -237,7 +237,6 @@ const salary = db.salary;
         overtime:0,
         USERID:ex.USERID,
         month:req.body.month,
-       
       }
       )
       return res.status(200).json("Employee salary added successfully");
@@ -246,7 +245,7 @@ const salary = db.salary;
     }
     
     } catch (error) {
-     return res.status(500).json({message:error.message})
+     return res.status(500).json({message:"EMployee not exist"})
     }
   });
 //update salary
@@ -281,6 +280,32 @@ const salary = db.salary;
   }else{
     return res.status(500).json("Employee not found")
   }
+  
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//get payslip record by user USERID, month
+router.post("/getPaySlip",async (req,res)=>{
+  try {
+    const ex =  await salary.findOne({
+      where:{
+        USERID:req.body.USERID,
+        month: req.body.month,
+      }
+    })
+    if(ex!=null){
+      let exist = await db.sequelize.query("USE zkteco;SELECT * from salaries where USERID="+req.params.id,{
+        type:QueryTypes.SELECT,
+      })
+
+      if(exist!=null){
+     return res.status(200).json(exist);
+      }
+    }
+    else{
+      return res.status(500).json("The given Employee id have no appraisal exist")
+    }
   
   } catch (error) {
    return res.status(500).json({message:error.message})
@@ -557,6 +582,44 @@ router.post("/addEmployees",async (req,res)=>{
    return res.status(500).json({message:error.message})
   }
 });
+//update employees
+router.post("/updateEmployees",async (req,res)=>{
+  try {
+  
+   let exist = await employees.findOne({
+    where:{
+      USERID:req.body.USERID
+    }
+  })
+   if(exist!=null){
+   await employees.update({
+    // EmpId:req.body.EmpId,
+      USERID:req.body.USERID,
+      name: req.body.name,
+      gender:req.body.gender,
+      contact:req.body.contact,
+      address:req.body.address,
+      email:req.body.email,
+      position:req.body.position,
+      birthday:req.body.birthday,
+      verification:req.body.verification,  
+      status:req.body.status,
+      join_date:req.body.join_date,
+      desc:req.body.desc,
+    },
+    {
+      where:{USERID:exist.USERID}
+    }
+    )
+    return res.status(200).json("employee is added successfully");
+   }else{
+    return res.status(500).json("Sorry employee having this USERID is not exists");
+   }
+  
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
 //show employee detail by name
 router.get("/getProfiledetail/:id",async (req,res)=>{
 
@@ -599,9 +662,102 @@ router.get("/getAllSalaries",async (req,res)=>{
    return res.status(500).json({message:error.message})
   }
 });
+//get absent and present in this month by employee id
+router.post("/getMonthlyAbsentOrPresent",async (req,res)=>{
+  try {
+ 
+      let absentPresent = await db.sequelize.query(`
+      use zkteco;
+WITH CTE AS (
+SELECT
+USERID,
+MIN(CHECKTIME) AS CHECKTIME,
+CAST(MIN(CHECKTIME) AS DATE) AS LogDate
+FROM (
+SELECT *, ROW_NUMBER() OVER(PARTITION BY USERID, CAST(CHECKTIME AS DATE) ORDER BY CHECKTIME) AS RowNumber
+FROM CHECKINOUT
+WHERE CAST(CHECKTIME AS DATE) BETWEEN
+DATEADD(mm, DATEDIFF(mm, 0, GETDATE()), 0) AND GETDATE()
+) AS Data
+WHERE RowNumber = 1
+GROUP BY USERID, CAST(CHECKTIME AS DATE)
+),
+CTE2 AS (
+SELECT
+USERID,
+DATEDIFF(dd, DATEADD(mm, DATEDIFF(mm, 0, GETDATE()), 0), GETDATE()) + 1 - (DATEDIFF(wk, DATEADD(mm, DATEDIFF(mm, 0, GETDATE()), 0), GETDATE()) * 2) AS TotalDays
+FROM USERINFO
+GROUP BY USERID
+)
+SELECT
+USERID,
+NAME,
+COUNT(DISTINCT LogDate) AS PresentDays,
+TotalDays - COUNT(DISTINCT LogDate) AS AbsentDays
+FROM
+(
+SELECT
+USERINFO.USERID,
+USERINFO.NAME,
+LogDate,
+CTE2.TotalDays
+FROM USERINFO
+JOIN CTE2 ON USERINFO.USERID = CTE2.USERID
+LEFT JOIN CTE ON USERINFO.USERID = CTE.USERID
+) AS AllData
+where USERID=${req.body.USERID}
+GROUP BY USERID, NAME, TotalDays
+`,{
+        type:QueryTypes.SELECT,
+      })
+      return res.status(200).json(absentPresent);
+ 
+    
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//get overtime of employee in current month by userid
+router.get("/getEmployeeTOtalOvertime/:id",async (req,res)=>{
+  try {
+   
+      let overtime = await db.sequelize.query(`
+      use zkteco;
+      WITH checkinout_grouped AS (
+        SELECT USERID, CAST(CHECKTIME AS DATE) AS CheckDate, MIN(CASE WHEN CHECKTYPE = 'I' THEN CHECKTIME END) AS Checkin, MAX(CASE WHEN CHECKTYPE = 'O' THEN CHECKTIME END) AS Exit_time
+        FROM CHECKINOUT
+        WHERE CHECKTYPE = 'I' OR CHECKTYPE = 'O'
+        GROUP BY USERID, CAST(CHECKTIME AS DATE)
+        )
+        SELECT
+        CONVERT(VARCHAR(5),
+        DATEADD(minute,
+        SUM(
+        CASE
+        WHEN DATEDIFF(minute, cin.Checkin, cin.Exit_time) >= 480 THEN DATEDIFF(minute, cin.Checkin, cin.Exit_time) - 480
+        ELSE 0
+        END
+        ),
+        0),
+        108) AS [Overtime (hh:mm)]
+        FROM checkinout_grouped cin
+        WHERE cin.USERID =${req.params.id}
+        AND YEAR(cin.CheckDate) = YEAR(GETDATE())
+        AND MONTH(cin.CheckDate) = MONTH(GETDATE())
+        AND cin.CheckDate <= GETDATE();
+        
+        `,{
+        type:QueryTypes.SELECT,
+      })
+     return res.status(200).json(overtime);
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
   //add admin
   const employees = db.employees;
   const admins = db.admins;
+  const loanAndAdvances = db.loanAndAdvances;
   router.post("/addAdmin",async (req,res)=>{
     try {
     if(req.body != null){
@@ -676,6 +832,34 @@ router.get("/getAllSalaries",async (req,res)=>{
      return res.status(500).json({message:error.message})
     }
   });
+  //api for refreshing input/output
+  router.get("/getTodayAttendeelogs",async (req,res)=>{
+    try {
+     
+        let query = await db.sequelize.query(`
+        use zkteco;
+WITH cte AS (
+SELECT
+USERID, CAST(CHECKTIME AS DATE) AS date, CHECKTIME,
+ROW_NUMBER() OVER (PARTITION BY USERID, CAST(CHECKTIME AS DATE) ORDER BY CHECKTIME) AS rn
+FROM CHECKINOUT
+)
+UPDATE CHECKINOUT
+SET CHECKTYPE =
+CASE
+WHEN rn = 1 THEN 'I'
+ELSE 'O'
+END
+FROM cte
+WHERE CHECKINOUT.USERID = cte.USERID AND CAST(CHECKINOUT.CHECKTIME AS DATE) = cte.date
+AND CHECKINOUT.CHECKTIME = cte.CHECKTIME`,{
+          type:QueryTypes.SELECT,
+        })
+       return res.status(200).json(query);
+    } catch (error) {
+     return res.status(500).json({message:error.message})
+    }
+  });
 //get tadays present on time
 // router.get("/getTodayAttendeeOnTime",async (req,res)=>{
 //   try {
@@ -718,23 +902,30 @@ router.get("/getEmployyeAllLogs/:id",async (req,res)=>{
    
      const exist = await db.sequelize.query(`USE zkteco;
      WITH checkinout_grouped AS (
-     SELECT USERID, CAST(CHECKTIME AS DATE) AS CheckDate, MIN(CASE WHEN CHECKTYPE = 'I' THEN CHECKTIME END) AS Checkin, MAX(CASE WHEN CHECKTYPE = 'O' THEN CHECKTIME END) AS Exit_time
-     FROM CHECKINOUT
-     WHERE CHECKTYPE = 'I' OR CHECKTYPE = 'O'
-     GROUP BY USERID, CAST(CHECKTIME AS DATE)
-     )
-     SELECT
-     cin.USERID as [Employee ID],
-     ui.NAME as [Employee Name],
-     'Exit' AS CheckType,
-     FORMAT(cin.CheckDate, 'dd/MM/yy') AS Date,
-     FORMAT(cin.Checkin, 'hh:mm') AS [Entry Time],
-     FORMAT(cin.Exit_time, 'hh:mm') AS [Exit Time]
-     FROM checkinout_grouped cin
-     INNER JOIN USERINFO ui ON cin.USERID = ui.USERID
-     WHERE cin.USERID=${req.params.id}
-     ORDER BY cin.CheckDate DESC, cin.Checkin DESC, cin.Exit_time DESC
-     OFFSET 1 ROWS;`,{
+      SELECT USERID, CAST(CHECKTIME AS DATE) AS CheckDate, MIN(CASE WHEN CHECKTYPE = 'I' THEN CHECKTIME END) AS Checkin, MAX(CASE WHEN CHECKTYPE = 'O' THEN CHECKTIME END) AS Exit_time
+      FROM CHECKINOUT
+      WHERE CHECKTYPE = 'I' OR CHECKTYPE = 'O'
+      GROUP BY USERID, CAST(CHECKTIME AS DATE)
+ )
+ SELECT
+      cin.USERID as [Employee ID],
+      ui.NAME as [Employee Name],
+    e.position,
+    e.email,
+      'Exit' AS CheckType,
+      cin.CheckDate AS Date,
+      FORMAT(cin.Checkin, 'hh:mm') AS [Entry Time],
+      FORMAT(cin.Exit_time, 'hh:mm') AS [Exit Time],
+    CASE 
+     WHEN DATEDIFF(minute, cin.Checkin, cin.Exit_time) > 480 THEN DATEDIFF(minute, cin.Checkin, cin.Exit_time) - 480
+     ELSE 0
+    END AS [Overtime]
+ FROM checkinout_grouped cin
+ INNER JOIN USERINFO ui ON cin.USERID = ui.USERID
+ INNER JOIN employees as e ON cin.USERID = e.USERID
+ WHERE cin.USERID=18
+ ORDER BY cin.CheckDate DESC, cin.Checkin DESC, cin.Exit_time DESC
+ OFFSET 1 ROWS;`,{
         type:QueryTypes.SELECT,
       })
      return res.status(200).json(exist);
@@ -750,6 +941,61 @@ router.get("/getTodayLateAttendeeCount",async (req,res)=>{
         type:QueryTypes.SELECT,
       })
      return res.status(200).json(data.length);
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//add loanAndAdvances
+router.post("/addLoanAndAdvances",async (req,res)=>{
+  try {
+  
+   let exist = await employees.findOne({
+    where:{
+      USERID:req.body.USERID
+    }
+  })
+   if(exist!=null){
+   if(req.body.type == 'Advance'){
+    await loanAndAdvances.create({
+      // EmpId:req.body.EmpId,
+        USERID:req.body.USERID,
+        name: req.body.name,
+        date:req.body.date,
+        amount:req.body.amount,
+        type:req.body.type,
+        deduction_type:null,
+        advance_type:req.body.advance_type,
+      })
+      return res.status(200).json("Advance added successfully");
+   }else if(req.body.type=='Loan'){
+    await loanAndAdvances.create({
+      // EmpId:req.body.EmpId,
+        USERID:req.body.USERID,
+        name: req.body.name,
+        date:req.body.date,
+        amount:req.body.amount,
+        type:req.body.type,
+        deduction_type:req.body.deduction_type,
+        advance_type:null,
+      })
+      return res.status(200).json("Loan added successfully");
+   }
+   }else{
+    return res.status(500).json("Sorry employee having this USERID not found");
+   }
+  
+  } catch (error) {
+   return res.status(500).json({message:error.message})
+  }
+});
+//get loanAndadvances
+router.get("/getLoanAndAdvances",async (req,res)=>{
+  try {
+   
+    const data = await db.sequelize.query("use zkteco; select s.*,e.name as [Employee Name] from salaries as s inner join employees as e on s.USERID = e.USERID ",{
+        type:QueryTypes.SELECT,
+      })
+     return res.status(200).json(data);
   } catch (error) {
    return res.status(500).json({message:error.message})
   }

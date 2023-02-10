@@ -35,7 +35,7 @@ db.employees =require("./employee")(sequelize, Sequelize,DataTypes,);
 db.appraisal =require("./appraisals")(sequelize, Sequelize,DataTypes);
 db.salary =require("./salary")(sequelize, Sequelize,DataTypes,); 
 db.admins =require("./admins")(sequelize, Sequelize,DataTypes);
-
+db.loanAndAdvances =require("./loanAndAdvances")(sequelize, Sequelize,DataTypes);
 // db.employees.hasOne(db.salary,{
 // });
 // db.employees.hasOne(db.appraisal,{
@@ -46,6 +46,8 @@ db.admins =require("./admins")(sequelize, Sequelize,DataTypes);
 // });
 // new db.admins({
 // });
-
+// new db.loanAndAdvances({
+//   });
+  
 module.exports = db;
 
