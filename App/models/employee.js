@@ -53,6 +53,19 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
     desc: {
       type: DataTypes.STRING,
       // allowNull:false
+    },
+    password: {
+      type: Sequelize.STRING,
+      allowNull:false,
+      
+    },
+    retypepassword:{
+      type: Sequelize.STRING,
+      allowNull:true,
+    },
+    d_id:{
+      type:DataTypes.INTEGER,
+      allowNull:false
     }
   },
     {

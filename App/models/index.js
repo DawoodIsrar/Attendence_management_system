@@ -36,9 +36,30 @@ db.appraisal =require("./appraisals")(sequelize, Sequelize,DataTypes);
 db.salary =require("./salary")(sequelize, Sequelize,DataTypes,); 
 db.admins =require("./admins")(sequelize, Sequelize,DataTypes);
 db.loanAndAdvances =require("./loanAndAdvances")(sequelize, Sequelize,DataTypes);
-// db.employees.hasOne(db.salary,{
+db.task = require("./task")(sequelize, Sequelize,DataTypes);
+db.projects = require("./project")(sequelize, Sequelize,DataTypes);
+db.departments = require("./department")(sequelize, Sequelize,DataTypes);
+db.role =require("./role.model")(sequelize, Sequelize,DataTypes);
+
+
+// db.role.belongsToMany(db.employees, {
+//   through: "employee_roles",
+//   foreignKey: "roleId",
+//   otherKey: "e_id"
 // });
-// db.employees.hasOne(db.appraisal,{
+// db.employees.belongsToMany(db.role, {
+//   through: "employee_roles",
+//   foreignKey: "e_id",
+//   otherKey: "roleId",
+// });
+// db.employees.hasOne(db.salary,{
+
+// });
+// db.employees.hasMany(db.departments,{
+//   foreignKey:"id",
+// });
+// new db.departments({
+
 // });
 // new db.appraisal({
 // });
@@ -47,7 +68,13 @@ db.loanAndAdvances =require("./loanAndAdvances")(sequelize, Sequelize,DataTypes)
 // new db.admins({
 // });
 // new db.loanAndAdvances({
-//   });
-  
+// });
+// new db.task({
+// });
+// new db.projects({
+// });
+// new db.employees({
+// });
 module.exports = db;
+// db.ROLES = ["user", "admin", "hr"];
 

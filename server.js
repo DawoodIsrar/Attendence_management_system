@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
 const jsonwebtoken = require("jsonwebtoken");
 const app = express();
+const config = require("./App/config/auth.config");
 require('dotenv').config();
 const secretKey = "cstAttendence";
 // app.use(cors(corsOptions));
@@ -15,10 +16,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // database
 const db = require("./app/models");
+
 //database connection
 db.sequelize.sync({force:false}).then(() => {
     console.log('database connected');
-   
+   initial();
   });
 //process.env.PORT || 
   const PORT = 8080;
@@ -756,6 +758,7 @@ router.get("/getEmployeeTOtalOvertime/:id",async (req,res)=>{
 });
   //add admin
   const employees = db.employees;
+  const depart = db.departments;
   const admins = db.admins;
   const loanAndAdvances = db.loanAndAdvances;
   router.post("/addAdmin",async (req,res)=>{
@@ -988,6 +991,153 @@ router.post("/addLoanAndAdvances",async (req,res)=>{
    return res.status(500).json({message:error.message})
   }
 });
+const Role = db.role;
+//Sign Up
+router.post("/signUp",async (req, res) => {
+  // Save User to Database
+ try{
+  const exist = await employees.findOne({
+    where:{
+      email:req.body.email
+    }
+  })
+  if(exist==null){
+    employees.create({
+      USERID:req.body.USERID,
+      name: req.body.name,
+      gender:req.body.gender,
+      contact:req.body.contact,
+      address:req.body.address,
+      email:req.body.email,
+      position:req.body.position,
+      birthday:req.body.birthday,
+      verification:req.body.verification,  
+      status:req.body.status,
+      join_date:req.body.join_date,
+      desc:req.body.desc,
+      password: bcrypt.hashSync(req.body.password, 8),
+      retypepassword:bcrypt.hashSync(req.body.retypepassword, 8),
+      d_id:req.body.d_id
+    })
+      .then(employees => {
+        if (req.body.roles) {
+          Role.findAll({
+            where: {
+              name: req.body.roles
+            }
+          }).then(roles => {
+            user.setRoles(roles).then(() => {
+              return res.send({ message: "User registered successfully!" });
+            });
+          });
+        } else {
+          // user role = 1
+          employees.setRoles([1]).then(() => {
+            return res.send({ message: "User registered successfully!" });
+          });
+        }
+      })
+      .catch(err => {
+        console.log(err.message )
+        return res.status(500).send({ message: err.message });
+      });
+  }else{
+    return res.status(500).send({"message":"sorry user email already exist"})
+  }
+ }catch(err){
+  return res.status(500).send({"message":err.message})
+ }
+})
+//LogIn
+router.post("/SecurelogIn", async (req, res) => {
+  employees.findOne({
+    where: {
+      email: req.body.email
+    }
+  })
+    .then(employee => {
+      if (!employee) {
+        return res.status(404).send({ message: "Employee Not found." });
+      }
+
+      var passwordIsValid = bcrypt.compareSync(
+        req.body.password,
+        employee.password
+      );
+
+      if (!passwordIsValid) {
+        return res.status(401).send({
+          accessToken: null,
+          message: "Invalid Password!"
+        });
+      }
+
+      var token = jsonwebtoken.sign({ id: employee.id }, config.secret, {
+        expiresIn: 86400 // 24 hours
+      });
+
+      var authorities = [];
+      employee.getRoles().then(roles => {
+        for (let i = 0; i < roles.length; i++) {
+          authorities.push("ROLE_" + roles[i].name.toUpperCase());
+        }
+        res.status(200).send({
+          id: employee.USERID,
+          username: employee.name,
+          email: employee.email,
+          roles: authorities,
+          accessToken: token
+        });
+      });
+    })
+    .catch(err => {
+      return res.status(500).send({ message: err.message });
+    });
+});
+
+//add Departments
+router.post("/addDepart", async (req, res) => {
+  // Save User to Database
+  depart.create({
+    d_id: req.body.d_id,
+    name: req.body.name,
+    desc: req.body.desc
+  }).then(res.status(200).send('department added successfully'))
+    .catch(err => {
+      return res.status(500).send({ message: err.message });
+    });
+    
+});
+//update department
+router.patch("/updateDepart", async (req, res) => {
+  // Save User to Database
+  depart.update({
+    name: req.body.name,
+    desc: req.body.desc
+  },{
+    where:{
+     id:req.body.id,
+    }
+  }).then(res.status(200).send('department updated successfully'))
+    .catch(err => {
+      return res.status(500).send({ message: err.message });
+    });
+    
+});
+//delete department
+router.patch("/deleteDepart", async (req, res) => {
+  // Save User to Database
+  depart.findOne
+  ({
+    where:{
+     id:req.body.id,
+    }
+  }).then(res.status(200).send('department deleted successfully'))
+    .catch(err => {
+      return res.status(500).send({ message: err.message });
+    });
+    
+});
 //get loanAndadvances
 router.get("/getLoanAndAdvances",async (req,res)=>{
   try {
@@ -1028,3 +1178,20 @@ function verifyToken(req,res,next){
   app.get("/", (req, res) => {
     return res.status(200).json({ message: "Welcome to attendence management system application." });
   });
+
+  function initial() {
+      // Role.create({
+      //   id: 1,
+      //   name: "user"
+      // });
+     
+      // Role.create({
+      //   id: 2,
+      //   name: "hr"
+      // });
+     
+      // Role.create({
+      //   id: 3,
+      //   name: "admin"
+      // });
+    }
