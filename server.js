@@ -30,6 +30,7 @@ db.sequelize.sync({force:false}).then(() => {
 
  
 const { QueryTypes } = require('sequelize');
+const department = require("./app/models/department");
 
  //userInfo all detail
 const router =express.Router();
@@ -1124,20 +1125,32 @@ router.patch("/updateDepart", async (req, res) => {
     });
     
 });
-//delete department
-router.patch("/deleteDepart", async (req, res) => {
-  // Save User to Database
-  depart.findOne
-  ({
+const projects = db.projects;
+//addProject
+router.post("/addProjects",async (req, res) => {
+  const exist = await employees.findOne({
     where:{
-     id:req.body.id,
+      USERID:req.body.USERID,
+      name: req.body.EmpName,
+      email:req.body.email
     }
-  }).then(res.status(200).send('department deleted successfully'))
-    .catch(err => {
-      return res.status(500).send({ message: err.message });
-    });
-    
-});
+  })
+  // Save projects to Database
+if(exist!=null){
+  projects.create({
+  name:req.body.name,
+  desc:req.body.desc,
+  status:req.body.status,
+  assignDate:req.body.assignDate,
+  USERID:exist.USERID
+}).then(res.status(200).send('Project is added successfully'))
+  .catch(err => {
+    return  res.status(500).send({ message: err.message });
+  });
+}else{
+return res.send({ message: "sorry the employee name you enter is not register " });
+}
+  })
 //get loanAndadvances
 router.get("/getLoanAndAdvances",async (req,res)=>{
   try {

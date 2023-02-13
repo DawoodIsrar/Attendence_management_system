@@ -55,8 +55,8 @@ db.role =require("./role.model")(sequelize, Sequelize,DataTypes);
 // db.employees.hasOne(db.salary,{
 
 // });
-// db.employees.hasMany(db.departments,{
-//   foreignKey:"id",
+// db.employees.hasMany(db.projects,{
+//   foreignKey:"eid",
 // });
 // new db.departments({
 
