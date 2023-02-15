@@ -27,9 +27,13 @@ module.exports = (sequelize, Sequelize,DataTypes) => {
       USERID: {
         type: DataTypes.INTEGER,
         allowNull: false
-      }
-
-    });
+      },
+    }
+    ,{
+      createdAt: false,
+      updatedAt: false
+     }
+    );
   
     return tasks;
   };

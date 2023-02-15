@@ -42,16 +42,16 @@ db.departments = require("./department")(sequelize, Sequelize,DataTypes);
 db.role =require("./role.model")(sequelize, Sequelize,DataTypes);
 
 
-// db.role.belongsToMany(db.employees, {
-//   through: "employee_roles",
-//   foreignKey: "roleId",
-//   otherKey: "e_id"
-// });
-// db.employees.belongsToMany(db.role, {
-//   through: "employee_roles",
-//   foreignKey: "e_id",
-//   otherKey: "roleId",
-// });
+db.role.belongsToMany(db.employees, {
+  through: "employee_roles",
+  foreignKey: "roleId",
+  otherKey: "e_id"
+});
+db.employees.belongsToMany(db.role, {
+  through: "employee_roles",
+  foreignKey: "e_id",
+  otherKey: "roleId",
+});
 // db.employees.hasOne(db.salary,{
 
 // });

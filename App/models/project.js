@@ -25,7 +25,12 @@ module.exports = (sequelize, Sequelize,DataTypes) => {
         allowNull: false
       }
       
-    });
+    }
+    ,{
+      createdAt: false,
+      updatedAt: false
+     }
+    );
   
     return projects;
   };

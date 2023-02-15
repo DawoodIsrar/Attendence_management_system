@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
-const config = require("../config/auth.config.js");
+const config = require("../config/auth.config");
 const db = require("../models");
-const User = db.User;
+const employee = db.employees;
 
 
 verifyToken = (req, res, next) => {
@@ -25,7 +25,7 @@ verifyToken = (req, res, next) => {
 };
 
 isAdmin = (req, res, next) => {
-  User.findByPk(req.userId).then(user => {
+  employee.findByPk(req.userId).then(user => {
     user.getRoles().then(roles => {
       for (let i = 0; i < roles.length; i++) {
         if (roles[i].name === "admin") {
@@ -43,8 +43,8 @@ isAdmin = (req, res, next) => {
 };
 
 isHr = (req, res, next) => {
-  User.findByPk(req.userId).then(user => {
-    user.getRoles().then(roles => {
+  employee.findByPk(req.userId).then(user => {
+    employee.getRoles().then(roles => {
       for (let i = 0; i < roles.length; i++) {
         if (roles[i].name === "hr") {
           next();
@@ -60,8 +60,8 @@ isHr = (req, res, next) => {
 };
 
 isHrOrAdmin = (req, res, next) => {
-  User.findByPk(req.userId).then(user => {
-    user.getRoles().then(roles => {
+  employee.findByPk(req.userId).then(user => {
+    employee.getRoles().then(roles => {
       for (let i = 0; i < roles.length; i++) {
         if (roles[i].name === "hr") {
           next();
