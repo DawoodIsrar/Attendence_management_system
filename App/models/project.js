@@ -20,6 +20,10 @@ module.exports = (sequelize, Sequelize,DataTypes) => {
         type:DataTypes.DATEONLY,
         allowNull:false
       },
+      deadline:{
+        type:DataTypes.DATEONLY,
+        allowNull:false
+      },
       USERID: {
         type: DataTypes.INTEGER,
         allowNull: false

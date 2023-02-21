@@ -256,7 +256,7 @@ router.get("/getAppraisalById/:id", async (req, res) => {
       a.* from appraisals as a inner join employees as e on a.USERID=e.USERID where a.USERID =` + req.params.id, {
         type: QueryTypes.SELECT,
       })
-      if (exist != null) {
+      if (exist !== null) {
         return res.status(200).json(exist);
       }
     }
@@ -270,7 +270,7 @@ router.get("/getAppraisalById/:id", async (req, res) => {
 //get appraisals record by user USERID
 router.get("/getAppraisalTable/:id", async (req, res) => {
   try {
-    if (req.params.id != null) {
+    if (req.params.id !== null) {
       let exist = await db.sequelize.query(`use zkteco; select e.name as [Employee Name] ,a.USERID as [Employee ID],a.date as Date from appraisals
        as a inner join employees as e on a.USERID=e.USERID where a.USERID =${req.params.id} order by Date DESC`, {
         type: QueryTypes.SELECT,
@@ -324,14 +324,14 @@ router.patch("/updateAddition", async (req, res) => {
         name: req.body.name
       }
     })
-    if (ex != null) {
+    if (ex !== null) {
       const exs = salary.findOne({
         where: {
           USERID: req.body.USERID,
           month: req.body.month
         }
       })
-      if (exs != null) {
+      if (exs !== null) {
         await salary.update({
           bonus: req.body.bonus,
         },
@@ -359,7 +359,7 @@ router.patch("/updateOvertimerate", async (req, res) => {
         name: req.body.name
       }
     })
-    if (ex != null) {
+    if (ex !== null) {
       let exs = await salary.findOne({
         where: {
           USERID: req.body.USERID,
@@ -938,7 +938,7 @@ router.post("/signUp", async (req, res) => {
         email: req.body.email
       }
     });
-    const depart = await .findOne({
+    const depart = await depart.findOne({
       where: {
         email: req.body.email
       }
@@ -1152,9 +1152,10 @@ router.patch("/updateProject", async (req, res) => {
     if (exist != null) {
       await projects.update({
         name: exist.name,
-        desc: req.body.desc,
+        description: req.body.description,
         status: req.body.status,
         assignDate: req.body.assignDate,
+        deadline:req.body.deadline,
         USERID: exist.USERID 
       }, {
         where: {
@@ -1256,15 +1257,15 @@ router.patch("/updateTask", async (req, res) => {
     const exist = await task.findOne({
       where: {
         name: req.body.name,
-        USERID:req.body.USERID
+        id:req.body.id
       }
     })
-    if (exist != null) {
+    if (exist !== null) {
       await task.update({
         name: req.body.name,
-        desc: req.body.desc,
-        start: req.body.start,
-        end: req.body.end,
+        description: req.body.description,
+        assignDate: req.body.assignDate,
+        deadline: req.body.deadline,
         USERID: exist.USERID
       }, {
         where: {

@@ -51,7 +51,7 @@ isHr = (req, res, next) => {
           return;
         }
       }
-
+ 
       res.status(403).send({
         message: "Require Hr Role!"
       });
