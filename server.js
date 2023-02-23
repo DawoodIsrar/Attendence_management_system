@@ -7,18 +7,19 @@ const app = express();
 require('dotenv').config();
 const config = require("./App/config/auth.config")
 const secretKey = "cstAttendence";
-// var whitelist = ['http://localhost:3000']
-// var corsOptions = {
-//   origin: function (origin, callback) {
-//     if (whitelist.indexOf(origin) !== -1) {
-//       callback(null, true)
-//     } else {
-//       callback(new Error('Not allowed by CORS'))
-//     }
-//   },
-//   credentials:true,            //access-control-allow-credentials:true
-//   optionSuccessStatus:200
-// }
+// whitelisting use for running server for different host
+var whitelist = ['http://localhost:3000']
+var corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials:true,            //access-control-allow-credentials:true
+  optionSuccessStatus:200
+}
 app.use(cors());
 
 
