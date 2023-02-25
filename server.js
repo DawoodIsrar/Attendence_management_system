@@ -98,6 +98,7 @@ router.get("/getEmployyeAllLogs/:id", async (req, res) => {
     return res.status(500).json({ message: error.message })
   }
 });
+//update for the github
 //get user name exist for attendence
 router.get("/getName", async (req, res) => {
   try {
