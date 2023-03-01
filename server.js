@@ -19,6 +19,7 @@ const secretKey = "cstAttendence";
 //   credentials:true,            //access-control-allow-credentials:true
 //   optionSuccessStatus:200
 // }
+//this is whitelisting
 // var whitelist = ['http://hrportal.cybersynctech.com', 'http://localhost:3000', 'http://localhost:8080']
 // var corsOptions = {
 //   origin: function (origin, callback) {
