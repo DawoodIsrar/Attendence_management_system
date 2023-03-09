@@ -7,7 +7,7 @@ const app = express();
 const config = require("./App/config/auth.config")
 require('dotenv').config();
 const secretKey = "cstAttendence";
-//update for git
+
 // var whitelist = ['http://localhost:3000']
 // var corsOptions = {
 //   origin: function (origin, callback) {
